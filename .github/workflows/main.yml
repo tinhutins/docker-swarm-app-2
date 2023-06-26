@@ -83,7 +83,7 @@ jobs:
          # script: set -a && . .env && set +a
               
       -
-        name: deploy to docker swarm 
+        name: deploy to docker swarm second app 
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: 192.168.43.128
@@ -96,7 +96,7 @@ jobs:
             export DOCKER_IMAGE_TAG=${{ github.sha }}
             docker-compose config | docker stack deploy -c docker-compose.yaml my-swarm-app-2
             rm -rf ../docker-swarm-app-2/
-          
+  
       #-  
       # name: Deploy to Docker swarm
       # uses: wshihadeh/docker-deployment-action@v1
