@@ -94,7 +94,7 @@ jobs:
             git clone https://github.com/tinhutins/docker-swarm-app-2.git
             cd docker-swarm-app-2/
             export DOCKER_IMAGE_TAG=${{ github.sha }}
-            docker-compose config | docker stack deploy -c docker-compose.yaml my-app
+            docker-compose config | docker stack deploy -c docker-compose.yaml my-swarm-app-2
             rm -rf ../docker-swarm-app-2/
           
       #-  
