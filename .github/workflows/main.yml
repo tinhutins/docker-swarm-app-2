@@ -1,0 +1,116 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - "main"
+
+jobs:
+  build:
+    runs-on: self-hosted
+    env:
+      DOCKER_IMAGE_TAG: ${{ github.sha }}
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          # list of Docker images to use as base name for tags
+          images: |
+            hutinskit/swarmtest
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
+      -
+        name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          #tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/swarmtest-2:${{ github.sha }}
+      
+     # - 
+     #   name: create env file
+     #   run: |
+      #    touch .env
+       #   echo DOCKER_IMAGE_TAG=${{ github.sha }} > .env
+       #   pwd
+       #   ls -laht
+       #   cat .env
+     # -
+      #  name: copy .env file via ssh key
+      #  uses: appleboy/scp-action@v0.1.4
+       # with:
+        #  host: 192.168.43.128
+        #  username: root
+        #  key: ${{ secrets.DOCKER_SSH_PRIVATE_KEY }}
+        #  port: 22
+         # source: ".env"
+         # target: /root
+       
+  deploy:
+    needs: build
+    runs-on: self-hosted
+    steps:
+     # -
+      #  name: executing env parsing
+       # uses: appleboy/ssh-action@v0.1.10
+       # with:
+        #  host: 192.168.43.128
+        #  username: root
+         # key: ${{ secrets.DOCKER_SSH_PRIVATE_KEY }}
+         # port: 22
+         # script: set -a && . .env && set +a
+              
+      -
+        name: deploy to docker swarm 
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: 192.168.43.128
+          username: root
+          key: ${{ secrets.DOCKER_SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            git clone https://github.com/tinhutins/docker-swarm-app-2.git
+            cd docker-swarm-app-2/
+            export DOCKER_IMAGE_TAG=${{ github.sha }}
+            docker-compose config | docker stack deploy -c docker-compose.yaml my-app
+            rm -rf ../docker-swarm-app-2/
+          
+      #-  
+      # name: Deploy to Docker swarm
+      # uses: wshihadeh/docker-deployment-action@v1
+      # env:
+       #   DOCKER_IMAGE_TAG: ${{ github.sha }}
+      # with:
+      #   remote_docker_host: root@192.168.43.128
+      #   ssh_private_key: ${{ secrets.DOCKER_SSH_PRIVATE_KEY }}
+      #   ssh_public_key: ${{ secrets.DOCKER_SSH_PUBLIC_KEY }}
+       #  deployment_mode: docker-swarm
+        # pre_deployment_command_args: set -a && . .env && set +a && export 
+        # copy_stack_file: true
+        # deploy_path: ./
+        # stack_file_name: docker-compose.yaml
+        # keep_files: 4
+        # args: my-app
