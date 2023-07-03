@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - "main"
+
+env:
+  IMAGE_NAME: "hutinskit/swarmtest-2"
+  IMAGE_TAG: "v1.0.20"
+
 jobs:
   build:
     runs-on: self-hosted
@@ -47,7 +52,7 @@ jobs:
           file: ./Dockerfile
           push: true
           #tags: ${{ steps.meta.outputs.tags }}
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/swarmtest-2:${{ github.sha }}
+          tags: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
       
      # - 
      #   name: create env file
@@ -91,11 +96,12 @@ jobs:
           key: ${{ secrets.DOCKER_SSH_PRIVATE_KEY }}
           port: 22
           script: |
+            rm -rf ~/docker-swarm-app-2/
             git clone https://github.com/tinhutins/docker-swarm-app-2.git
             cd docker-swarm-app-2/
-            export DOCKER_IMAGE_TAG=${{ github.sha }}
+            export DOCKER_IMAGE_TAG=${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
             docker-compose config | docker stack deploy -c docker-compose.yaml my-swarm-app-2
-            rm -rf ../docker-swarm-app-2/
+            
   
       #-  
       # name: Deploy to Docker swarm
